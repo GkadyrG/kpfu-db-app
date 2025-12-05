@@ -184,7 +184,6 @@ func (r *Repository) GetFullShipmentInfo(ctx context.Context) ([]domain.FullShip
 
 func (r *Repository) GetCustomerShipmentSummary(ctx context.Context, customerID int) (*domain.ProcedureResult, error) {
 	var result domain.ProcedureResult
-	query := "CALL p_customer_shipment_summary($1, NULL, NULL)"
 	
 	// Используем QueryRow для получения выходных параметров
 	err := r.db.QueryRow(ctx, 
