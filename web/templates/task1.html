@@ -1,0 +1,125 @@
+{{define "task1.html"}}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Система учета отгрузки деталей</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="/">Главная</a></li>
+                <li class="nav-item"><a class="nav-link" href="/view">VIEW</a></li>
+                <li class="nav-item"><a class="nav-link" href="/dynamic">Динамическое отображение</a></li>
+                <li class="nav-item active"><a class="nav-link" href="/task-1">Задача 1</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-2">Задача 2</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-3">Задача 3</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1>{{ .Title }}</h1>
+        <p class="lead">Сведения об отгрузке деталей покупателям из указанного города</p>
+        <p class="text-muted">Два варианта решения: SQL-запрос и обход коллекции объектов</p>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Параметры запроса</h5>
+                <div class="form-group">
+                    <label for="cityInput">Город:</label>
+                    <input type="text" id="cityInput" class="form-control" value="Казань" placeholder="Введите название города">
+                </div>
+                <button class="btn btn-primary mr-2" onclick="executeSQL()">Выполнить SQL-запрос</button>
+                <button class="btn btn-success" onclick="executeORM()">Обход коллекции (ORM)</button>
+            </div>
+        </div>
+
+        <div id="resultsContainer" style="display:none;">
+            <div class="alert alert-info">
+                <strong>Метод:</strong> <span id="methodUsed"></span><br>
+                <strong>Параметр:</strong> <span id="paramUsed"></span><br>
+                <strong>Найдено записей:</strong> <span id="recordCount"></span>
+            </div>
+
+            <h3>Результаты:</h3>
+            <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Номер склада</th>
+                        <th>Код детали</th>
+                        <th>Дата отгрузки</th>
+                        <th>Количество</th>
+                        <th>Наименование покупателя</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+
+        <div id="loadingMessage" style="display:none;">
+            <div class="alert alert-info">Выполнение запроса...</div>
+        </div>
+        
+        <a href="/" class="btn btn-secondary mt-3">Назад на главную</a>
+    </div>
+
+    <script>
+        function executeSQL() {
+            const city = document.getElementById('cityInput').value;
+            executeQuery('/api/task-1/sql', city, 'SQL-запрос');
+        }
+
+        function executeORM() {
+            const city = document.getElementById('cityInput').value;
+            executeQuery('/api/task-1/orm', city, 'Обход коллекции (ORM)');
+        }
+
+        function executeQuery(url, city, method) {
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('resultsContainer').style.display = 'none';
+
+            fetch(url + '?city=' + encodeURIComponent(city))
+                .then(response => response.json())
+                .then(data => {
+                    displayResults(data, method, city);
+                    document.getElementById('loadingMessage').style.display = 'none';
+                    document.getElementById('resultsContainer').style.display = 'block';
+                })
+                .catch(error => {
+                    alert('Ошибка выполнения запроса: ' + error);
+                    document.getElementById('loadingMessage').style.display = 'none';
+                });
+        }
+
+        function displayResults(data, method, city) {
+            document.getElementById('methodUsed').textContent = method;
+            document.getElementById('paramUsed').textContent = city;
+            document.getElementById('recordCount').textContent = data.length;
+
+            let html = '';
+            if (data.length === 0) {
+                html = '<tr><td colspan="5" class="text-center">Нет данных для отображения</td></tr>';
+            } else {
+                data.forEach(row => {
+                    const date = new Date(row.shipment_date);
+                    html += '<tr>';
+                    html += '<td>' + row.warehouse_no + '</td>';
+                    html += '<td>' + row.part_code + '</td>';
+                    html += '<td>' + date.toISOString().split('T')[0] + '</td>';
+                    html += '<td>' + row.qty.toFixed(2) + '</td>';
+                    html += '<td>' + row.customer_name + '</td>';
+                    html += '</tr>';
+                });
+            }
+            document.getElementById('resultsBody').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
+{{end}}
+

@@ -1,0 +1,132 @@
+{{define "dynamic.html"}}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Система учета отгрузки деталей</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="/">Главная</a></li>
+                <li class="nav-item"><a class="nav-link" href="/view">VIEW</a></li>
+                <li class="nav-item active"><a class="nav-link" href="/dynamic">Динамическое отображение</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-1">Задача 1</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-2">Задача 2</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-3">Задача 3</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1>{{ .Title }}</h1>
+        <p class="text-muted">Динамическое отображение всех таблиц в одном DataGridView</p>
+        
+        <div class="form-group">
+            <label for="tableSelect"><strong>Выберите таблицу:</strong></label>
+            <select id="tableSelect" class="form-control" onchange="loadTable()">
+                <option value="">-- Выберите таблицу --</option>
+                <option value="parts">Детали (parts)</option>
+                <option value="customers">Покупатели (customers)</option>
+                <option value="shipments">Отгрузки (shipments)</option>
+            </select>
+        </div>
+
+        <div id="tableContainer" style="display:none;">
+            <h3 id="tableTitle"></h3>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark" id="tableHead"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="loadingMessage" style="display:none;">
+            <div class="alert alert-info">Загрузка данных...</div>
+        </div>
+        
+        <a href="/" class="btn btn-secondary mt-3">Назад на главную</a>
+    </div>
+
+    <script>
+        function loadTable() {
+            const tableName = document.getElementById('tableSelect').value;
+            if (!tableName) {
+                document.getElementById('tableContainer').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('tableContainer').style.display = 'none';
+
+            fetch('/api/table/' + tableName)
+                .then(response => response.json())
+                .then(data => {
+                    displayTable(tableName, data);
+                    document.getElementById('loadingMessage').style.display = 'none';
+                    document.getElementById('tableContainer').style.display = 'block';
+                })
+                .catch(error => {
+                    alert('Ошибка загрузки данных: ' + error);
+                    document.getElementById('loadingMessage').style.display = 'none';
+                });
+        }
+
+        function displayTable(tableName, data) {
+            const titles = {
+                'parts': 'Детали',
+                'customers': 'Покупатели',
+                'shipments': 'Отгрузки'
+            };
+
+            document.getElementById('tableTitle').textContent = titles[tableName] || tableName;
+
+            if (data.length === 0) {
+                document.getElementById('tableHead').innerHTML = '';
+                document.getElementById('tableBody').innerHTML = '<tr><td>Нет данных</td></tr>';
+                return;
+            }
+
+            // Генерация заголовков
+            const headers = Object.keys(data[0]);
+            let headerHTML = '<tr>';
+            headers.forEach(header => {
+                headerHTML += '<th>' + header + '</th>';
+            });
+            headerHTML += '</tr>';
+            document.getElementById('tableHead').innerHTML = headerHTML;
+
+            // Генерация строк
+            let bodyHTML = '';
+            data.forEach(row => {
+                bodyHTML += '<tr>';
+                headers.forEach(header => {
+                    let value = row[header];
+                    // Форматирование значений
+                    if (value === null) {
+                        value = '<em>null</em>';
+                    } else if (typeof value === 'number') {
+                        value = value.toFixed(2);
+                    } else if (typeof value === 'string' && value.includes('T')) {
+                        // Форматирование дат
+                        const date = new Date(value);
+                        if (!isNaN(date.getTime())) {
+                            value = date.toISOString().split('T')[0];
+                        }
+                    }
+                    bodyHTML += '<td>' + value + '</td>';
+                });
+                bodyHTML += '</tr>';
+            });
+            document.getElementById('tableBody').innerHTML = bodyHTML;
+        }
+    </script>
+</body>
+</html>
+{{end}}
+

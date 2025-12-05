@@ -1,0 +1,263 @@
+{{define "home.html"}}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .table-container { margin-bottom: 50px; }
+        .procedure-result { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Система учета отгрузки деталей</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active"><a class="nav-link" href="/">Главная</a></li>
+                <li class="nav-item"><a class="nav-link" href="/view">VIEW</a></li>
+                <li class="nav-item"><a class="nav-link" href="/dynamic">Динамическое отображение</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-1">Задача 1</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-2">Задача 2</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-3">Задача 3</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1>{{ .Title }}</h1>
+
+        {{if .ProcedureResult}}
+        <div class="procedure-result">
+            <h5>Результат хранимой процедуры (первый покупатель):</h5>
+            <p><strong>Суммарное количество:</strong> {{printf "%.2f" .ProcedureResult.TotalQty}}</p>
+            <p><strong>Общая стоимость:</strong> {{printf "%.2f" .ProcedureResult.TotalValue}} руб.</p>
+        </div>
+        {{end}}
+
+        <!-- Детали -->
+        <div class="table-container">
+            <h2>Справочник деталей</h2>
+            <button class="btn btn-primary btn-sm mb-2" onclick="showAddPartForm()">Добавить деталь</button>
+            <div id="addPartForm" style="display:none;" class="mb-3 p-3 border">
+                <h5>Новая деталь</h5>
+                <input type="text" id="newPartCode" class="form-control mb-2" placeholder="Код детали">
+                <select id="newPartType" class="form-control mb-2">
+                    <option value="покупная">Покупная</option>
+                    <option value="собственного производства">Собственного производства</option>
+                </select>
+                <input type="text" id="newPartName" class="form-control mb-2" placeholder="Наименование">
+                <select id="newPartUnit" class="form-control mb-2">
+                    <option value="шт">шт</option>
+                    <option value="кг">кг</option>
+                    <option value="м">м</option>
+                    <option value="компл">компл</option>
+                </select>
+                <input type="number" step="0.01" id="newPartPrice" class="form-control mb-2" placeholder="Плановая цена">
+                <button class="btn btn-success" onclick="addPart()">Добавить</button>
+                <button class="btn btn-secondary" onclick="hideAddPartForm()">Отмена</button>
+            </div>
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Код</th>
+                        <th>Тип</th>
+                        <th>Наименование</th>
+                        <th>Ед. изм.</th>
+                        <th>Цена</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Parts}}
+                    <tr>
+                        <td>{{.PartCode}}</td>
+                        <td>{{.PartType}}</td>
+                        <td>{{.Name}}</td>
+                        <td>{{.Unit}}</td>
+                        <td>{{printf "%.2f" .PlanPrice}}</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="deletePart('{{.PartCode}}')">Удалить</button>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Покупатели -->
+        <div class="table-container">
+            <h2>Покупатели</h2>
+            <button class="btn btn-primary btn-sm mb-2" onclick="showAddCustomerForm()">Добавить покупателя</button>
+            <div id="addCustomerForm" style="display:none;" class="mb-3 p-3 border">
+                <h5>Новый покупатель</h5>
+                <input type="text" id="newCustomerName" class="form-control mb-2" placeholder="Наименование">
+                <input type="text" id="newCustomerAddress" class="form-control mb-2" placeholder="Адрес">
+                <input type="text" id="newCustomerCity" class="form-control mb-2" placeholder="Город">
+                <button class="btn btn-success" onclick="addCustomer()">Добавить</button>
+                <button class="btn btn-secondary" onclick="hideAddCustomerForm()">Отмена</button>
+            </div>
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Наименование</th>
+                        <th>Адрес</th>
+                        <th>Город</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Customers}}
+                    <tr>
+                        <td>{{.CustomerID}}</td>
+                        <td>{{.Name}}</td>
+                        <td>{{.Address}}</td>
+                        <td>{{.City}}</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" data-customer-id="{{.CustomerID}}" onclick="deleteCustomer(this.getAttribute('data-customer-id'))">Удалить</button>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Отгрузки -->
+        <div class="table-container">
+            <h2>Учет отгрузки</h2>
+            <button class="btn btn-primary btn-sm mb-2" onclick="showAddShipmentForm()">Добавить отгрузку</button>
+            <div id="addShipmentForm" style="display:none;" class="mb-3 p-3 border">
+                <h5>Новая отгрузка</h5>
+                <input type="number" id="newShipmentWarehouse" class="form-control mb-2" placeholder="Номер склада">
+                <input type="number" id="newShipmentDoc" class="form-control mb-2" placeholder="Номер документа">
+                <input type="number" id="newShipmentCustomer" class="form-control mb-2" placeholder="ID покупателя">
+                <input type="text" id="newShipmentPart" class="form-control mb-2" placeholder="Код детали">
+                <select id="newShipmentUnit" class="form-control mb-2">
+                    <option value="шт">шт</option>
+                    <option value="кг">кг</option>
+                    <option value="м">м</option>
+                    <option value="компл">компл</option>
+                </select>
+                <input type="number" step="0.01" id="newShipmentQty" class="form-control mb-2" placeholder="Количество">
+                <input type="date" id="newShipmentDate" class="form-control mb-2">
+                <button class="btn btn-success" onclick="addShipment()">Добавить</button>
+                <button class="btn btn-secondary" onclick="hideAddShipmentForm()">Отмена</button>
+            </div>
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Склад</th>
+                        <th>№ документа</th>
+                        <th>ID покупателя</th>
+                        <th>Код детали</th>
+                        <th>Ед. изм.</th>
+                        <th>Количество</th>
+                        <th>Дата</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Shipments}}
+                    <tr>
+                        <td>{{.WarehouseNo}}</td>
+                        <td>{{.ShipmentDocNo}}</td>
+                        <td>{{.CustomerID}}</td>
+                        <td>{{.PartCode}}</td>
+                        <td>{{.Unit}}</td>
+                        <td>{{printf "%.2f" .Qty}}</td>
+                        <td>{{.ShipmentDate.Format "2006-01-02"}}</td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" data-warehouse="{{.WarehouseNo}}" data-doc="{{.ShipmentDocNo}}" onclick="deleteShipment(this.getAttribute('data-warehouse'), this.getAttribute('data-doc'))">Удалить</button>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function showAddPartForm() { document.getElementById('addPartForm').style.display = 'block'; }
+        function hideAddPartForm() { document.getElementById('addPartForm').style.display = 'none'; }
+        function showAddCustomerForm() { document.getElementById('addCustomerForm').style.display = 'block'; }
+        function hideAddCustomerForm() { document.getElementById('addCustomerForm').style.display = 'none'; }
+        function showAddShipmentForm() { document.getElementById('addShipmentForm').style.display = 'block'; }
+        function hideAddShipmentForm() { document.getElementById('addShipmentForm').style.display = 'none'; }
+
+        function addPart() {
+            const data = {
+                part_code: document.getElementById('newPartCode').value,
+                part_type: document.getElementById('newPartType').value,
+                name: document.getElementById('newPartName').value,
+                unit: document.getElementById('newPartUnit').value,
+                plan_price: parseFloat(document.getElementById('newPartPrice').value)
+            };
+            fetch('/api/parts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(() => location.reload());
+        }
+
+        function deletePart(code) {
+            if (confirm('Удалить деталь ' + code + '?')) {
+                fetch('/api/parts/' + code, { method: 'DELETE' })
+                    .then(() => location.reload());
+            }
+        }
+
+        function addCustomer() {
+            const data = {
+                name: document.getElementById('newCustomerName').value,
+                address: document.getElementById('newCustomerAddress').value,
+                city: document.getElementById('newCustomerCity').value
+            };
+            fetch('/api/customers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(() => location.reload());
+        }
+
+        function deleteCustomer(id) {
+            if (confirm('Удалить покупателя #' + id + '?')) {
+                fetch('/api/customers/' + id, { method: 'DELETE' })
+                    .then(() => location.reload());
+            }
+        }
+
+        function addShipment() {
+            const data = {
+                warehouse_no: parseInt(document.getElementById('newShipmentWarehouse').value),
+                shipment_doc_no: parseInt(document.getElementById('newShipmentDoc').value),
+                customer_id: parseInt(document.getElementById('newShipmentCustomer').value),
+                part_code: document.getElementById('newShipmentPart').value,
+                unit: document.getElementById('newShipmentUnit').value,
+                qty: parseFloat(document.getElementById('newShipmentQty').value),
+                shipment_date: document.getElementById('newShipmentDate').value
+            };
+            fetch('/api/shipments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(() => location.reload());
+        }
+
+        function deleteShipment(warehouse, doc) {
+            if (confirm('Удалить отгрузку?')) {
+                fetch('/api/shipments/' + warehouse + '/' + doc, { method: 'DELETE' })
+                    .then(() => location.reload());
+            }
+        }
+    </script>
+</body>
+</html>
+{{end}}

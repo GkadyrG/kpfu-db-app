@@ -1,0 +1,71 @@
+{{define "task2.html"}}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Система учета отгрузки деталей</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="/">Главная</a></li>
+                <li class="nav-item"><a class="nav-link" href="/view">VIEW</a></li>
+                <li class="nav-item"><a class="nav-link" href="/dynamic">Динамическое отображение</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-1">Задача 1</a></li>
+                <li class="nav-item active"><a class="nav-link" href="/task-2">Задача 2</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-3">Задача 3</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1>{{ .Title }}</h1>
+        <p class="lead">Сведения об отгрузке деталей покупателям в текущем году</p>
+        <p class="text-muted">Запрос с использованием оконных функций для расчета доли от общего количества</p>
+        
+        <div class="alert alert-info">
+            <strong>Показаны данные:</strong> номер склада, код детали, наименование покупателя, количество, 
+            общее отгруженное количество этой детали всем покупателям, доля от общего количества отгрузки всем покупателям
+        </div>
+
+        <table class="table table-striped table-bordered">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Номер склада</th>
+                    <th>Код детали</th>
+                    <th>Наименование покупателя</th>
+                    <th>Количество</th>
+                    <th>Общее кол-во детали</th>
+                    <th>Доля от общего (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{if .Results}}
+                    {{range .Results}}
+                    <tr>
+                        <td>{{.WarehouseNo}}</td>
+                        <td>{{.PartCode}}</td>
+                        <td>{{.CustomerName}}</td>
+                        <td>{{printf "%.2f" .Qty}}</td>
+                        <td>{{printf "%.2f" .TotalPartQty}}</td>
+                        <td><strong>{{printf "%.2f" .ShareOfTotal}}%</strong></td>
+                    </tr>
+                    {{end}}
+                {{else}}
+                    <tr>
+                        <td colspan="6" class="text-center">Нет данных для текущего года</td>
+                    </tr>
+                {{end}}
+            </tbody>
+        </table>
+        
+        <a href="/" class="btn btn-secondary mt-3">Назад на главную</a>
+    </div>
+</body>
+</html>
+{{end}}
+

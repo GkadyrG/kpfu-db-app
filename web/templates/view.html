@@ -1,0 +1,73 @@
+{{define "view.html"}}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Система учета отгрузки деталей</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="/">Главная</a></li>
+                <li class="nav-item active"><a class="nav-link" href="/view">VIEW</a></li>
+                <li class="nav-item"><a class="nav-link" href="/dynamic">Динамическое отображение</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-1">Задача 1</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-2">Задача 2</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-3">Задача 3</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1>{{ .Title }}</h1>
+        <p class="text-muted">Представление, объединяющее данные из трех таблиц (Покупатели, Детали, Отгрузки)</p>
+        
+        <table class="table table-striped table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Склад</th>
+                    <th>№ док.</th>
+                    <th>Дата</th>
+                    <th>Покупатель</th>
+                    <th>Город</th>
+                    <th>Адрес</th>
+                    <th>Деталь</th>
+                    <th>Наименование</th>
+                    <th>Тип</th>
+                    <th>Ед.изм.</th>
+                    <th>Кол-во</th>
+                    <th>Цена</th>
+                    <th>Сумма</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .FullInfo}}
+                <tr>
+                    <td>{{.WarehouseNo}}</td>
+                    <td>{{.ShipmentDocNo}}</td>
+                    <td>{{.ShipmentDate.Format "2006-01-02"}}</td>
+                    <td>{{.CustomerName}}</td>
+                    <td>{{.CustomerCity}}</td>
+                    <td>{{.CustomerAddress}}</td>
+                    <td>{{.PartCode}}</td>
+                    <td>{{.PartName}}</td>
+                    <td>{{.PartType}}</td>
+                    <td>{{.Unit}}</td>
+                    <td>{{printf "%.2f" .Qty}}</td>
+                    <td>{{printf "%.2f" .PlanPrice}}</td>
+                    <td><strong>{{printf "%.2f" .TotalPrice}}</strong></td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+        
+        <a href="/" class="btn btn-secondary">Назад на главную</a>
+    </div>
+</body>
+</html>
+{{end}}
+

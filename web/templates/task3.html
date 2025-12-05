@@ -1,0 +1,119 @@
+{{define "task3.html"}}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .Title }}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="/">Система учета отгрузки деталей</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="/">Главная</a></li>
+                <li class="nav-item"><a class="nav-link" href="/view">VIEW</a></li>
+                <li class="nav-item"><a class="nav-link" href="/dynamic">Динамическое отображение</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-1">Задача 1</a></li>
+                <li class="nav-item"><a class="nav-link" href="/task-2">Задача 2</a></li>
+                <li class="nav-item active"><a class="nav-link" href="/task-3">Задача 3</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1>{{ .Title }}</h1>
+        <p class="lead">Все покупатели, для которых выполняется условие:</p>
+        <div class="alert alert-secondary">
+            <strong>Условие:</strong> Для некоторой детали с ценой > 100, 
+            все документы об отгрузке этой детали этому покупателю были только со склада 5.
+        </div>
+        
+        <p class="text-muted">Два варианта решения: кванторный SQL-запрос и record-ориентированный подход</p>
+
+        <div class="btn-group mb-4" role="group">
+            <button class="btn btn-primary" onclick="executeSQLQuery()">Кванторный SQL-запрос</button>
+            <button class="btn btn-success" onclick="executeRecordBased()">Record-ориентированный</button>
+        </div>
+
+        <div id="resultsContainer" style="display:none;">
+            <div class="alert alert-info">
+                <strong>Метод:</strong> <span id="methodUsed"></span><br>
+                <strong>Найдено покупателей:</strong> <span id="recordCount"></span>
+            </div>
+
+            <h3>Результаты:</h3>
+            <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>ID покупателя</th>
+                        <th>Наименование покупателя</th>
+                        <th>Город</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+
+        <div id="loadingMessage" style="display:none;">
+            <div class="alert alert-info">Выполнение запроса...</div>
+        </div>
+        
+        <a href="/" class="btn btn-secondary mt-3">Назад на главную</a>
+    </div>
+
+    <script>
+        function executeSQLQuery() {
+            executeQuery('/api/task-3/sql', 'Кванторный SQL-запрос с подзапросами');
+        }
+
+        function executeRecordBased() {
+            executeQuery('/api/task-3/record', 'Record-ориентированный подход (обход коллекции)');
+        }
+
+        function executeQuery(url, method) {
+            document.getElementById('loadingMessage').style.display = 'block';
+            document.getElementById('resultsContainer').style.display = 'none';
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    displayResults(data, method);
+                    document.getElementById('loadingMessage').style.display = 'none';
+                    document.getElementById('resultsContainer').style.display = 'block';
+                })
+                .catch(error => {
+                    alert('Ошибка выполнения запроса: ' + error);
+                    document.getElementById('loadingMessage').style.display = 'none';
+                });
+        }
+
+        function displayResults(data, method) {
+            document.getElementById('methodUsed').textContent = method;
+            document.getElementById('recordCount').textContent = data.length;
+
+            let html = '';
+            if (data.length === 0) {
+                html = '<tr><td colspan="3" class="text-center">Нет покупателей, удовлетворяющих условию</td></tr>';
+            } else {
+                data.forEach(row => {
+                    html += '<tr>';
+                    html += '<td>' + row.customer_id + '</td>';
+                    html += '<td>' + row.customer_name + '</td>';
+                    html += '<td>' + row.customer_city + '</td>';
+                    html += '</tr>';
+                });
+            }
+            document.getElementById('resultsBody').innerHTML = html;
+        }
+
+        // Автоматически выполнить SQL запрос при загрузке страницы
+        window.onload = function() {
+            executeSQLQuery();
+        };
+    </script>
+</body>
+</html>
+{{end}}
+

@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-shipment_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shipment_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-shipments_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./0_init.sql:/docker-entrypoint-initdb.d/0_init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shipment_user}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: "postgres://${POSTGRES_USER:-shipment_user}:${POSTGRES_PASSWORD:-shipment_pass}@db:5432/${POSTGRES_DB:-shipments_db}?sslmode=disable"
+
+volumes:
+  postgres_data:
+
