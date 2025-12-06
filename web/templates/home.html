@@ -34,13 +34,19 @@
     <div class="container mt-4">
         <h1>{{ .Title }}</h1>
 
-        {{if .ProcedureResult}}
         <div class="procedure-result">
-            <h5>Результат хранимой процедуры (первый покупатель):</h5>
-            <p><strong>Суммарное количество:</strong> {{printf "%.2f" .ProcedureResult.TotalQty}}</p>
-            <p><strong>Общая стоимость:</strong> {{printf "%.2f" .ProcedureResult.TotalValue}} руб.</p>
+            <h5>Результат хранимой процедуры:</h5>
+            <div class="form-group">
+                <label for="customerSelect">Выберите покупателя:</label>
+                <select id="customerSelect" class="form-control" onchange="updateProcedureResult()">
+                    {{range .Customers}}
+                    <option value="{{.CustomerID}}">{{.Name}} (ID: {{.CustomerID}})</option>
+                    {{end}}
+                </select>
+            </div>
+            <p><strong>Суммарное количество:</strong> <span id="totalQty">--</span></p>
+            <p><strong>Общая стоимость:</strong> <span id="totalValue">--</span> руб.</p>
         </div>
-        {{end}}
 
         <!-- Детали -->
         <div class="table-container">
@@ -257,6 +263,28 @@
                     .then(() => location.reload());
             }
         }
+
+        // Обновление результата хранимой процедуры
+        function updateProcedureResult() {
+            const customerId = document.getElementById('customerSelect').value;
+            
+            fetch('/api/procedure/' + customerId)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalQty').textContent = data.total_qty.toFixed(2);
+                    document.getElementById('totalValue').textContent = data.total_value.toFixed(2);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('totalQty').textContent = '0.00';
+                    document.getElementById('totalValue').textContent = '0.00';
+                });
+        }
+
+        // Загрузить результат при открытии страницы
+        window.addEventListener('DOMContentLoaded', function() {
+            updateProcedureResult();
+        });
     </script>
 </body>
 </html>

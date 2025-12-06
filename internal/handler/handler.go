@@ -87,18 +87,11 @@ func (h *Handler) Home(c *gin.Context) {
 		return
 	}
 
-	// Get procedure result for first customer if exists
-	var procedureResult *domain.ProcedureResult
-	if len(customers) > 0 {
-		procedureResult, _ = h.repo.GetCustomerShipmentSummary(c.Request.Context(), customers[0].CustomerID)
-	}
-
 	c.HTML(http.StatusOK, "home.html", gin.H{
-		"Title":           "Главная",
-		"Parts":           parts,
-		"Customers":       customers,
-		"Shipments":       shipments,
-		"ProcedureResult": procedureResult,
+		"Title":     "Главная",
+		"Parts":     parts,
+		"Customers": customers,
+		"Shipments": shipments,
 	})
 }
 
