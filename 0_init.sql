@@ -83,6 +83,7 @@ CREATE TABLE shipments_audit (
 -- ============================================================================
 
 -- Триггер 1: Каскадное удаление отгрузок при удалении покупателя
+-- BEFORE DELETE - сначала удаляем дочерние записи, потом родительскую
 CREATE OR REPLACE FUNCTION fn_cascade_delete_shipments() 
 RETURNS TRIGGER 
 LANGUAGE plpgsql 
@@ -94,8 +95,8 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER trg_customers_after_delete
-AFTER DELETE ON customers
+CREATE TRIGGER trg_customers_before_delete
+BEFORE DELETE ON customers
 FOR EACH ROW
 EXECUTE FUNCTION fn_cascade_delete_shipments();
 

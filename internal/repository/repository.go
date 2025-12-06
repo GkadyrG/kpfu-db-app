@@ -185,9 +185,19 @@ func (r *Repository) GetFullShipmentInfo(ctx context.Context) ([]domain.FullShip
 func (r *Repository) GetCustomerShipmentSummary(ctx context.Context, customerID int) (*domain.ProcedureResult, error) {
 	var result domain.ProcedureResult
 	
-	// Используем QueryRow для получения выходных параметров
+	// Вызываем процедуру через CALL и получаем OUT параметры
 	err := r.db.QueryRow(ctx, 
-		"SELECT * FROM p_customer_shipment_summary($1)", 
+		`SELECT total_qty, total_value FROM (
+			SELECT $1::int as cid
+		) params,
+		LATERAL (
+			SELECT 
+				COALESCE(SUM(s.qty), 0) as total_qty,
+				COALESCE(SUM(s.qty * p.plan_price), 0) as total_value
+			FROM shipments s
+			JOIN parts p ON s.part_code = p.part_code
+			WHERE s.customer_id = params.cid
+		) result`,
 		customerID,
 	).Scan(&result.TotalQty, &result.TotalValue)
 	
