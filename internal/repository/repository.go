@@ -6,16 +6,18 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/student/my-kpfu-db-app/internal/domain"
+	"gorm.io/gorm"
 )
 
-// Repository holds the database connection pool.
+// Repository holds the database connection pool and GORM connection.
 type Repository struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	gormDB *gorm.DB
 }
 
-// New creates a new Repository.
-func New(db *pgxpool.Pool) *Repository {
-	return &Repository{db: db}
+// New creates a new Repository with pgx and GORM connections.
+func New(db *pgxpool.Pool, gormDB *gorm.DB) *Repository {
+	return &Repository{db: db, gormDB: gormDB}
 }
 
 // ============================================================================
@@ -243,44 +245,35 @@ func (r *Repository) GetTask1SQL(ctx context.Context, city string) ([]domain.Tas
 }
 
 // ============================================================================
-// ЗАДАЧА 1: ORM вариант (обход коллекции)
+// ЗАДАЧА 1: ORM вариант (обход коллекции с использованием GORM)
 // ============================================================================
 
 func (r *Repository) GetTask1ORM(ctx context.Context, city string) ([]domain.Task1Result, error) {
-	// Получаем все отгрузки с информацией о покупателях
-	query := `
-		SELECT 
-			s.warehouse_no,
-			s.part_code,
-			s.shipment_date,
-			s.qty,
-			c.name AS customer_name,
-			c.city
-		FROM shipments s
-		JOIN customers c ON s.customer_id = c.customer_id
-		ORDER BY s.shipment_date DESC
-	`
+	// Используем GORM для загрузки объектов с автоматической подгрузкой связей
+	var shipments []domain.ShipmentGorm
 	
-	rows, err := r.db.Query(ctx, query)
+	// Preload загружает связанные объекты Customer для каждой отгрузки
+	// GORM автоматически выполняет JOIN и маппит данные на объекты
+	err := r.gormDB.Preload("Customer").Find(&shipments).Error
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	// Обход коллекции с фильтрацией в коде
+	// Обход коллекции ORM объектов с фильтрацией В КОДЕ
 	var results []domain.Task1Result
-	for rows.Next() {
-		var r domain.Task1Result
-		var customerCity string
-		if err := rows.Scan(&r.WarehouseNo, &r.PartCode, &r.ShipmentDate, &r.Qty, &r.CustomerName, &customerCity); err != nil {
-			return nil, err
-		}
-		
-		// Фильтрация в коде (как в ORM)
-		if customerCity == city {
-			results = append(results, r)
+	for _, s := range shipments {
+		// Фильтрация по городу происходит в коде Go, а не в SQL
+		if s.Customer.City == city {
+			results = append(results, domain.Task1Result{
+				WarehouseNo:  s.WarehouseNo,
+				PartCode:     s.PartCode,
+				ShipmentDate: s.ShipmentDate,
+				Qty:          s.Qty,
+				CustomerName: s.Customer.Name,
+			})
 		}
 	}
+	
 	return results, nil
 }
 

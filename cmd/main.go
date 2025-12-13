@@ -16,17 +16,25 @@ func main() {
 	cfg := config.Load()
 	fmt.Printf("Connecting to database: %s\n", cfg.DBURL)
 
-	// Connect to the database
+	// Connect to the database (pgx)
 	dbpool, err := database.NewConnection(cfg.DBURL)
 	if err != nil {
 		log.Fatalf("Could not connect to database: %v", err)
 	}
 	defer dbpool.Close()
 	
-	fmt.Println("Database connection established successfully")
+	fmt.Println("Database connection (pgx) established successfully")
+
+	// Connect to the database (GORM) for ORM operations
+	gormDB, err := database.NewGormConnection(cfg.DBURL)
+	if err != nil {
+		log.Fatalf("Could not connect with GORM: %v", err)
+	}
+	
+	fmt.Println("Database connection (GORM) established successfully")
 
 	// Create repository and handler
-	repo := repository.New(dbpool)
+	repo := repository.New(dbpool, gormDB)
 	h := handler.New(repo)
 
 	// Set up router
